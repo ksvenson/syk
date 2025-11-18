@@ -1,6 +1,7 @@
 #shortcuts https://deepnote.com/docs/keyboard-shortcuts
 #qutip tutorials: https://qutip.org/qutip-tutorials/
 # https://qutip.readthedocs.io/en/qutip-5.0.x/
+import os
 from itertools import combinations
 import itertools
 import numpy as np
@@ -18,6 +19,10 @@ import scipy as sp
 import matplotlib.pyplot as plt
 from scipy.interpolate import interp1d
 from scipy import linalg
+
+from utility import utils
+
+CACHE_DIR = os.path.join(os.path.dirname(__file__), 'cache/')
 
 #Define Majorana operators
 def majorana(idx, L):
@@ -44,17 +49,23 @@ def majorana(idx, L):
     return tensor(tensor_list)
 
 # SYK Hamiltonian for q-body
-def Hamil(N, q, random_seed):
-    #Fix seed to generate random couplings Jijkl
-    np.random.seed(random_seed)
+# @utils.cache('pkl', os.path.join(CACHE_DIR + 'fsyk'))
+def Hamil(N, q, note=None):
+    """
+    N: number of majoranas
+    """
     
     comb = combinations(np.arange(N), q)
     hyperedges = tuple([i for i in comb])
     
     # Use variance with convention J=1
-    #couplings = (1j)**(q/2)*np.sqrt( factorial(q-1) / (N**(q-1) * 2**q) )*np.random.randn(len(hyperedges))
-    # FIXME: is the above comment correctly transcribed here?
-    couplings = np.sqrt(6/N**3) *np.random.randn(len(hyperedges))
+    couplings = np.random.randn(len(hyperedges))
+    if q == 2:
+        couplings *= (1j) / np.sqrt(N)
+    elif q == 4:
+        couplings *= np.sqrt(6/N**3)
+    else:
+        raise ValueError(f'q = {q} is not supported')
     # Create a dictionary to map a hyperedge to the random coupling
     factor = dict(zip(hyperedges, couplings))
     
@@ -69,5 +80,5 @@ def Hamil(N, q, random_seed):
         Hk = Hk * factor[idxs]
         H = H + Hk
     
-    return H
+    return H.full()
 

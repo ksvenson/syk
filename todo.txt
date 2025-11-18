@@ -1,0 +1,3 @@
+Is there a way to vectorize finding the density matrix and entropy?
+
+MPS? Probably not...
