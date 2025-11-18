@@ -2,7 +2,8 @@ import numpy as np
 import scipy as sp
 import matplotlib.pyplot as plt
 
-import SYK_Full as syk
+import SYK_Full as fsyk
+import Sparse_SYK as ssyk
 
 if __name__ == "__main__":
     seed = 408139579
@@ -10,7 +11,8 @@ if __name__ == "__main__":
     N = 20
     q = 4
 
-    H = syk.Hamil(N, q, seed)
+    full_H = fsyk.Hamil(N, q, seed)
+    sparse_H = ssyk.sparse_H(N, )
     print(H.shape)
 
     evals = H.eigenenergies()

@@ -53,6 +53,7 @@ def Hamil(N, q, random_seed):
     
     # Use variance with convention J=1
     #couplings = (1j)**(q/2)*np.sqrt( factorial(q-1) / (N**(q-1) * 2**q) )*np.random.randn(len(hyperedges))
+    # FIXME: is the above comment correctly transcribed here?
     couplings = np.sqrt(6/N**3) *np.random.randn(len(hyperedges))
     # Create a dictionary to map a hyperedge to the random coupling
     factor = dict(zip(hyperedges, couplings))
