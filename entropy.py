@@ -56,4 +56,4 @@ if __name__ == "__main__":
 
     ax.set(xlabel=r'Energy ($\mathcal{J}$)', ylabel='Entropy')
     fig.legend()
-    fig.savefig(os.path.join(FIGS_DIR, f'ent_s{s}_N{N}_g{g}.svg'), **FIG_SAVE_OPTS)
+    fig.savefig(os.path.join(FIGS_DIR, f'ent_s{s}_N{N}.svg'), **FIG_SAVE_OPTS)
