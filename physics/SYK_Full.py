@@ -61,9 +61,9 @@ def Hamil(N, q, note=None):
     # Use variance with convention J=1
     couplings = np.random.randn(len(hyperedges))
     if q == 2:
-        couplings *= (1j) / np.sqrt(N)
+        couplings = couplings * (1j) / np.sqrt(N)
     elif q == 4:
-        couplings *= np.sqrt(6/N**3)
+        couplings = couplings * np.sqrt(6/N**3)
     else:
         raise ValueError(f'q = {q} is not supported')
     # Create a dictionary to map a hyperedge to the random coupling

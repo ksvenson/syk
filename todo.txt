@@ -1,3 +1,7 @@
 Is there a way to vectorize finding the density matrix and entropy?
 
 MPS? Probably not...
+
+The plot is actually entanglement entropy density!
+
+How did they make their nice trend line?
