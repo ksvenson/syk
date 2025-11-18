@@ -45,7 +45,7 @@ if __name__ == "__main__":
 
     fig, ax = plt.subplots()
     for g in (0, 3, 10, 50, 500):
-        H = SYK4_SYK2(samples, N, g, note=f's{s}_N{N}_g{g}')
+        H = SYK4_SYK2(s, N, g, note=f's{s}_N{N}_g{g}')
         eigs = eigensystem(H, note=f'SYK4_SYK2_s{s}_N{N}_g{g}')
 
         ent = entropy(eigs['evecs'], size)
