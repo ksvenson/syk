@@ -22,63 +22,64 @@ from scipy import linalg
 
 from utility import utils
 
-CACHE_DIR = os.path.join(os.path.dirname(__file__), 'cache/')
 
 #Define Majorana operators
-def majorana(idx, L):
-    parity = idx % 2 #this checks th parity of the index
-    if parity:
-        bndry = sigmay() #odd indices have sigmay as a boundary term
+def majorana(idx, N):
+    if idx % 2:
+        bndry = sigmay()
     else:
-        bndry = sigmax() #even indices have sigmax as a boundary term
-    b_idx = idx//2 #this gives the index on the spin chain
-    if b_idx > 0:
-        tensor_list = [] #this builds a tensor list of the paulis which construct the majorana
-        for k in np.arange(L):
-            if k < b_idx:
-                tensor_list.append(sigmaz())
-            elif k == b_idx:
-                tensor_list.append(bndry)
-            elif k > b_idx:
-                tensor_list.append(qeye(2))
-        tensor_list = list(tensor_list)
-    elif b_idx == 0:
-        tensor_list = [bndry]
-        for k in np.arange(L-1):
-            tensor_list.append(qeye(2))
-    return tensor(tensor_list)
+        bndry = sigmax()
+    return tensor([sigmaz()] * (idx//2) + [bndry] + [qeye(2)] * (N//2 - idx//2 - 1))
 
-# SYK Hamiltonian for q-body
-# @utils.cache('pkl', os.path.join(CACHE_DIR + 'fsyk'))
-def Hamil(N, q, note=None):
+def Hamil(N, q, return_full=True):
     """
     N: number of majoranas
     """
-    
     comb = combinations(np.arange(N), q)
     hyperedges = tuple([i for i in comb])
     
     # Use variance with convention J=1
-    couplings = np.random.randn(len(hyperedges))
-    if q == 2:
-        couplings = couplings * (1j) / np.sqrt(N)
-    elif q == 4:
-        couplings = couplings * np.sqrt(6/N**3)
-    else:
-        raise ValueError(f'q = {q} is not supported')
+    couplings = (1j)**(q/2) * np.sqrt(2**(q-1) * factorial(q-1) / (q * N**(q-1))) * np.random.randn(len(hyperedges))
+
     # Create a dictionary to map a hyperedge to the random coupling
-    factor = dict(zip(hyperedges, couplings))
+    # factor = dict(zip(hyperedges, couplings))
     
     # Evaluate majoranas before building Hamiltonian
-    majs = [majorana(i,N/2) for i in range(N)]
+    majs = [majorana(i, N) for i in range(N)]
 
     H = 0
-    for idxs in hyperedges:
-        Hk = 1
-        for i in idxs:
-            Hk = Hk * majs[i]
-        Hk = Hk * factor[idxs]
-        H = H + Hk
+    for i, m_idxs in enumerate(hyperedges):
+        temp = couplings[i]
+        for j in m_idxs:
+            temp = temp * majs[j]
+        H = H + temp
     
     return H.full()
 
+def wormhole(N, q, mu):
+    assert q % 2 == 0
+
+    comb = combinations(np.arange(N), q)
+    hyperedges = tuple(i for i in comb)
+    couplingsL = (1j)**(q/2) * np.sqrt(2**(q-1) * factorial(q-1) / (q * N**(q-1))) * np.random.randn(len(hyperedges))
+    couplingsR = (-1)**(q/2) * couplingsL
+
+    majs = [majorana(i, 2*N) for i in range(2*N)]
+
+    HL = 0
+    HR = 0
+    for i, m_idxs in enumerate(hyperedges):
+        tempL = couplingsL[i]
+        tempR = couplingsR[i]
+        for j in m_idxs:
+            tempL = tempL * majs[j]
+            tempR = tempR * majs[j + N]
+        HL = HL + tempL
+        HR = HR + tempR
+    
+    Hint = 0
+    for i in range(N):
+        Hint = Hint + (majs[i] * majs[i + N])
+    Hint = Hint * 1j * mu
+
+    return (HL + HR + Hint).full()

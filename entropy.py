@@ -10,13 +10,18 @@ FIG_SAVE_OPTS = {'bbox_inches': 'tight'}
 
 CACHE_DIR = os.path.join(os.path.dirname(__file__), 'cache/')
 FIGS_DIR = './figs'
+CACHE_SWITCH = True
 
 
-@utils.cache('npy', CACHE_DIR + 'SYK4_SYK2')
+@utils.cache('npy', CACHE_SWITCH, CACHE_DIR + 'SYK4_SYK2')
 def SYK4_SYK2(samples, N, g, note=None):
-    return np.array([fsyk.Hamil(N, 4, note=None) + (g/N) * fsyk.Hamil(N, 2, note=None) for _ in range(samples)])
+    return np.array([fsyk.Hamil(N, 4) + (g/N) * fsyk.Hamil(N, 2) for _ in range(samples)])
 
-@utils.cache('npz', CACHE_DIR + 'eigensystem')
+@utils.cache('npy', CACHE_SWITCH, CACHE_DIR + 'wormhole')
+def wormhole(samples, N, q, mu, note=None):
+    return np.array([fsyk.wormhole(N, q, mu) for _ in range(samples)])
+
+@utils.cache('npz', CACHE_SWITCH, CACHE_DIR + 'eigensystem')
 def eigensystem(H, note=None):
     all_evals = []
     all_evecs = []
@@ -26,7 +31,7 @@ def eigensystem(H, note=None):
         all_evecs.append(evecs)
     return {'evals': np.array(all_evals), 'evecs': np.array(all_evecs)}
 
-@utils.cache('npy', CACHE_DIR + 'entropy')
+@utils.cache('npy', CACHE_SWITCH, CACHE_DIR + 'entropy')
 def entropy(evecs, size, note=None):
     M = np.transpose(evecs, axes=(0, 2, 1)).reshape(evecs.shape[0], evecs.shape[1], 2**size, -1)
     U, s, Vh = np.linalg.svd(M)
@@ -41,19 +46,34 @@ if __name__ == "__main__":
     # number of majoranas
     N = 20
     # size of entanglement partition in qubits
-    size = N // 4
+    size = 2
+
+    # model = 'SYK4_SYK2'
+    model = 'wormhole'
+    # params = (0, 3, 10, 50, 500)
+    params = (0.001, 0.01, 0.1, 1)
 
     fig, ax = plt.subplots()
-    for g in (0, 3, 10, 50, 500):
-        H = SYK4_SYK2(s, N, g, note=f's{s}_N{N}_g{g}')
-        eigs = eigensystem(H, note=f'SYK4_SYK2_s{s}_N{N}_g{g}')
+    for param in params:
+        note = f's{s}_N{N}_p{param}'
+        # H = SYK4_SYK2(s, N, param, note=note)
+        H = wormhole(s, N//2, 4, param, note=note)
 
-        ent = entropy(eigs['evecs'], size)
+        eigs = eigensystem(H, note=f'{model}_{note}')
+        ent = entropy(eigs['evecs'], size, note=f'{model}_{note}_size{size}')
 
         eng_slope = 1 / (np.max(eigs['evals']) - np.min(eigs['evals']))
-        ax.scatter((eng_slope*(eigs['evals'] - np.min(eigs['evals'])) - 0.5).flatten(), ent.flatten() / size, s=5, label=rf'$g={g}$')
-        print(f'Finished g={g}')
 
-    ax.set(xlabel=r'Energy ($\mathcal{J}$)', ylabel='Entropy')
-    fig.legend()
-    fig.savefig(os.path.join(FIGS_DIR, f'ent_s{s}_N{N}.svg'), **FIG_SAVE_OPTS)
+        norm_eng = (eng_slope*(eigs['evals'] - np.min(eigs['evals'])) - 0.5).flatten()
+        ent_den = ent.flatten() / size
+
+        bins = 200
+        mid_bins = np.linspace(-0.5, 0.5, num=bins+1)[:-1] + (1/(2*bins))
+        avg_ent_den, _, _ = sp.stats.binned_statistic(norm_eng, ent_den, statistic='mean', bins=bins, range=(-0.5, 0.5))
+        
+        ax.plot(mid_bins, avg_ent_den, label=rf'$\mu={param}$')
+        print(f'Finished p={param}')
+
+    ax.set(xlabel=r'Energy (Normalized to [-0.5, 0.5])', ylabel=f'{size}-qubit Entropy')
+    ax.legend()
+    fig.savefig(os.path.join(FIGS_DIR, f'binned_ent_{model}_s{s}_N{N}_size{size}.svg'), **FIG_SAVE_OPTS)

@@ -5,3 +5,5 @@ MPS? Probably not...
 The plot is actually entanglement entropy density!
 
 How did they make their nice trend line?
+
+Do fermions from the left and right systems still anticommute?

@@ -9,7 +9,7 @@ LEGEND_OPTIONS = {'bbox_to_anchor': (0.9, 0.5), 'loc': 'center left'}
 FIG_SAVE_OPTIONS = {'bbox_inches': 'tight'}
 
 
-def cache(method: cache_type, base):
+def cache(method: cache_type, switch, base):
     def wrap(func):
         def inner(*args, **kwargs):
             fname = base
@@ -19,7 +19,7 @@ def cache(method: cache_type, base):
                     fname += '_' + kwargs['note']
                     has_note = True
             fname += f'.{method}'
-            if has_note and os.path.isfile(fname):
+            if switch and has_note and os.path.isfile(fname):
                 if method == 'npy':
                     data = np.load(fname)
                 elif method == 'npz':
@@ -29,7 +29,7 @@ def cache(method: cache_type, base):
                         data = pickle.load(file)
             else:
                 data = func(*args, **kwargs)
-                if has_note:
+                if switch and has_note:
                     if method == 'npy':
                         np.save(fname, data)
                     elif method == 'npz':
