@@ -6,7 +6,7 @@ import os
 import physics.SYK_Full as fsyk
 from utility import utils
 
-FIG_SAVE_OPTS = {'bbox_inches': 'tight'}
+FIG_SAVE_OPTS = {'bbox_inches': 'tight', 'dpi': 500}
 
 CACHE_DIR = os.path.join(os.path.dirname(__file__), 'cache/')
 FIGS_DIR = './figs'
@@ -40,6 +40,7 @@ def entropy(evecs, size, note=None):
 
 if __name__ == "__main__":
     np.random.seed(408139579)
+    binned = False
 
     # number of samples
     s = 10
@@ -51,7 +52,8 @@ if __name__ == "__main__":
     # model = 'SYK4_SYK2'
     model = 'wormhole'
     # params = (0, 3, 10, 50, 500)
-    params = (0.001, 0.01, 0.1, 1)
+    # params = (0.001, 0.01, 0.1, 1)
+    params = (1, 10, 100, 1000)
 
     fig, ax = plt.subplots()
     for param in params:
@@ -67,13 +69,19 @@ if __name__ == "__main__":
         norm_eng = (eng_slope*(eigs['evals'] - np.min(eigs['evals'])) - 0.5).flatten()
         ent_den = ent.flatten() / size
 
-        bins = 200
-        mid_bins = np.linspace(-0.5, 0.5, num=bins+1)[:-1] + (1/(2*bins))
-        avg_ent_den, _, _ = sp.stats.binned_statistic(norm_eng, ent_den, statistic='mean', bins=bins, range=(-0.5, 0.5))
-        
-        ax.plot(mid_bins, avg_ent_den, label=rf'$\mu={param}$')
+        if binned:
+            bins = 200
+            mid_bins = np.linspace(-0.5, 0.5, num=bins+1)[:-1] + (1/(2*bins))
+            avg_ent_den, _, _ = sp.stats.binned_statistic(norm_eng, ent_den, statistic='mean', bins=bins, range=(-0.5, 0.5))
+            
+            ax.plot(mid_bins, avg_ent_den, label=rf'$\mu={param}$')
+        else:
+            ax.scatter(norm_eng, ent_den, s=5, label=rf'$\mu={param}$')
         print(f'Finished p={param}')
 
-    ax.set(xlabel=r'Energy (Normalized to [-0.5, 0.5])', ylabel=f'{size}-qubit Entropy')
+    ax.set(xlabel=r'Energy (Normalized to [-0.5, 0.5])', ylabel=f'{size}-qubit EE', title=model)
     ax.legend()
-    fig.savefig(os.path.join(FIGS_DIR, f'binned_ent_{model}_s{s}_N{N}_size{size}.svg'), **FIG_SAVE_OPTS)
+    fname = f'ent_{model}_s{s}_N{N}_size{size}.png'
+    if binned:
+        fname = 'binned_' + fname
+    fig.savefig(os.path.join(FIGS_DIR, fname), **FIG_SAVE_OPTS)
