@@ -42,6 +42,7 @@ if __name__ == "__main__":
     np.random.seed(408139579)
     binned = False
 
+    q = 8
     # number of samples
     s = 10
     # number of majoranas
@@ -52,14 +53,14 @@ if __name__ == "__main__":
     # model = 'SYK4_SYK2'
     model = 'wormhole'
     # params = (0, 3, 10, 50, 500)
-    # params = (0.001, 0.01, 0.1, 1)
-    params = (1, 10, 100, 1000)
+    params = (0.001, 0.01)
+    # params = (1, 10, 100, 1000)
 
     fig, ax = plt.subplots()
     for param in params:
-        note = f's{s}_N{N}_p{param}'
+        note = f'q{q}_s{s}_N{N}_p{param}'
         # H = SYK4_SYK2(s, N, param, note=note)
-        H = wormhole(s, N//2, 4, param, note=note)
+        H = wormhole(s, N//2, 8, param, note=note)
 
         eigs = eigensystem(H, note=f'{model}_{note}')
         ent = entropy(eigs['evecs'], size, note=f'{model}_{note}_size{size}')
@@ -76,12 +77,13 @@ if __name__ == "__main__":
             
             ax.plot(mid_bins, avg_ent_den, label=rf'$\mu={param}$')
         else:
-            ax.scatter(norm_eng, ent_den, s=5, label=rf'$\mu={param}$')
+            ax.scatter(norm_eng, ent_den, s=2, label=rf'$\mu={param}$')
         print(f'Finished p={param}')
 
-    ax.set(xlabel=r'Energy (Normalized to [-0.5, 0.5])', ylabel=f'{size}-qubit EE', title=model)
+    ax.set(xlabel=r'Energy (Normalized to [-0.5, 0.5])', ylabel=f'{size}-qubit EE', yscale='log')
     ax.legend()
-    fname = f'ent_{model}_s{s}_N{N}_size{size}.png'
+    ax.set(title=rf'{model}: $q={q}$, $N={N}$')
+    fname = f'ent_{model}_q{q}_s{s}_N{N}_size{size}.png'
     if binned:
         fname = 'binned_' + fname
     fig.savefig(os.path.join(FIGS_DIR, fname), **FIG_SAVE_OPTS)
